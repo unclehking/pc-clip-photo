@@ -1,0 +1,120 @@
+
+
+<!DOCTYPE html>
+<html ng-app="App">
+	<head>
+		<title>应答 -- 优你我，一起前行！</title>
+		<meta charset="UTF-8">
+		<link rel="shortcut icon" href="../res/img/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" type="text/css" href="http://apps.bdimg.com/libs/bootstrap/3.3.4/css/bootstrap.css" >
+		<link href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+		<script src="../res/js/bootstrap.min.js"></script>
+		<script src="//cdn.bootcss.com/angular.js/1.6.2/angular.min.js"></script>
+		<script src="http://apps.bdimg.com/libs/angular.js/1.5.0-beta.0/angular-sanitize.min.js"></script>
+		<link rel="stylesheet" href="uploadPhoto.css" type="text/css" />
+	</head>
+	<body ng-controller="userInfo">
+
+		<script type="text/javascript" src="cropbox.js"></script>
+		
+		<div class="containerPhoto" ng-controller="uploadPhoto" style="margin: 60px auto 100px auto;" >
+			
+  			<div class="imageBox">
+    			<div class="thumbBox"></div>
+    			<div class="spinner" style="display: none">Loading...</div>
+  			</div>
+  			<div class="action"> 
+    			<div class="new-contentarea tc"> <a href="javascript:void(0)" class="upload-img">
+	      			<label for="upload-file">选择图像</label>
+	      			<a></a>
+	      			<input type="file" class="" name="upload-file" id="upload-file" accept="image/gif,image/jpeg,image/png" />
+	    		</div>
+	    		<input type="button" id="btnCrop"  class="Btnsty_peyton" value="上传">
+	    		<input type="button" id="btnZoomIn" class="Btnsty_peyton" value="+"  >
+	    		<input type="button" id="btnZoomOut" class="Btnsty_peyton" value="-" >
+	  		</div>
+  			<div class="cropped">
+  				<p>头像预览</p>
+  			</div>
+		</div>
+		<div class="clear"></div>
+
+		<script src="../res/js/login.js"></script>
+		<script type="text/javascript">
+			
+			var userData = wuka.getUserData();
+			app.controller("uploadPhoto",function($scope,$http){
+				$scope.$parent.load = true;
+				
+				//上传头像
+				var options =
+				{
+					thumbBox: '.thumbBox',
+					spinner: '.spinner',
+					imgSrc: userData.UseHead
+				}
+				var cropper = $('.imageBox').cropbox(options);
+				$('#upload-file').on('change', function(){
+					var reader = new FileReader();
+					reader.onload = function(e) {
+						options.imgSrc = e.target.result;
+						cropper = $('.imageBox').cropbox(options);
+					}
+					reader.readAsDataURL(this.files[0]);
+					this.files = [];
+				})
+				//上传
+				$('#btnCrop').on('click', function(){
+					var img = cropper.getDataURL();
+					var obj = cropper.getBlob();
+					var fd = new FormData();
+			        fd.append("upfile", obj,"image.png");
+			        $.ajax({
+			            url: "http://120.24.155.11:85/api/file/upfile",
+			            type: "POST",
+			            processData: false,
+			            contentType: false,
+			            data: fd,
+			            success: function (data) {
+			            	var d = {
+								Guid: userData.Guid,
+								UseHead: data.Value
+							};
+							$.post(wuka.baseAPI+'login/change',d,function(result){
+								if(!!result.Guid){
+								   	wuka.setUserData(result);
+								   	$scope.$apply(function() {
+									    $scope.$parent.user = $scope.user = result;
+									});
+									location.href = "../user/user_center.html";
+								}else{
+									alert("保存出现错误，请检查确认！");
+								}
+							});
+			            }
+			        });
+				})
+				$('#btnZoomIn').on('click', function(){
+					cropper.zoomIn();
+				})
+				$('#btnZoomOut').on('click', function(){
+					cropper.zoomOut();
+				})
+				
+				$(window).bind('mouseup', function(e){
+				 	var t = document.querySelector(".containerPhoto");
+				 	var target = window.event ? window.event.srcElement : e.srcElement;
+				 	if(t.contains(target)){
+			 			var img = cropper.getDataURL();
+						$('.cropped').html('');
+						$('.cropped').append('<p>头像预览</p><img src="'+img+'" align="absmiddle" style="width:180px;margin-top:4px;border-radius:180px;box-shadow:0px 0px 12px #7E7E7E;"><p>180px*180px</p>');
+				 	};
+				});
+					
+			});
+			
+		</script>
+	
+	</body>
+</html>
